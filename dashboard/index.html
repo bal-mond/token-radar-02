@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token Launch Radar — pre-token protocols ranked by expected launch value</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <p class="eyebrow">Sealed snapshot · DefiLlama · <span id="asof"></span></p>
+    <h1>Token Launch Radar</h1>
+    <p class="sub">Pre-token protocols, ranked by what their launch would be worth. The value
+    model is fitted on the snapshot's own traded tokens and tested out of sample —
+    no hardcoded list of names, no flat multiple.</p>
+    <p class="meta" id="meta"></p>
+  </div>
+</header>
+
+<section class="kpis" id="kpis" aria-label="Key figures"></section>
+<section class="integrity" id="integrity" aria-label="Self checks"></section>
+
+<section class="controls">
+  <input id="q" type="search" placeholder="Search a protocol…" aria-label="Search">
+  <select id="cat" aria-label="Category"><option value="">All categories</option></select>
+  <select id="verdict" aria-label="Verdict">
+    <option value="">All verdicts</option>
+    <option>FARM</option>
+    <option>THIN</option>
+    <option>SKIP</option>
+  </select>
+  <select id="sort" aria-label="Sort">
+    <option value="rank">Sort: rank</option>
+    <option value="expected">Sort: expected value</option>
+    <option value="tvl">Sort: TVL</option>
+    <option value="growth">Sort: 7-day change</option>
+    <option value="age">Sort: age</option>
+    <option value="odds">Sort: token odds</option>
+  </select>
+  <nav class="views" aria-label="Views">
+    <button data-view="board" class="on">Board</button>
+    <button data-view="live">Live anchors</button>
+    <button data-view="model">Model</button>
+  </nav>
+</section>
+
+<main>
+  <section id="view-board" class="view">
+    <table id="board">
+      <thead><tr>
+        <th>#</th><th>Protocol</th><th>Category</th><th>Chains</th>
+        <th class="num">TVL</th><th class="num">7d</th><th class="num">Age</th>
+        <th class="num">Implied</th><th class="num">Odds</th><th class="num">Expected</th><th>Verdict</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <p class="count" id="count"></p>
+  </section>
+
+  <section id="detail" class="detail" hidden></section>
+
+  <section id="view-live" class="view" hidden>
+    <h2>Live anchors — the traded tokens the curve was fitted on</h2>
+    <p class="note">These protocols already trade, so the board shows the market's own
+    value next to what the fitted curve would have predicted for them. The curve
+    is fitted on all 128 of them; the 24 largest by market cap are shown here.</p>
+    <table id="live-table">
+      <thead><tr>
+        <th>Protocol</th><th>Category</th>
+        <th class="num">TVL</th><th class="num">Market cap</th>
+        <th class="num">Curve predicted</th><th class="num">Ratio</th>
+      </tr></thead>
+      <tbody id="live-rows"></tbody>
+    </table>
+  </section>
+
+  <section id="view-model" class="view" hidden>
+    <h2>The model — fitted, tested, and its limits stated</h2>
+    <div id="model-body"></div>
+  </section>
+</main>
+
+<footer>
+  <p id="foot"></p>
+</footer>
+
+<script src="../data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
