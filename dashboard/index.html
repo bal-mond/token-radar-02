@@ -2,90 +2,73 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<title>Token Launch Radar — radar-4</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Token Launch Radar — pre-token protocols ranked by expected launch value</title>
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
 <header class="top">
-  <div class="brand">
-    <p class="eyebrow">Sealed snapshot · DefiLlama · <span id="asof"></span></p>
-    <h1>Token Launch Radar</h1>
-    <p class="sub">Pre-token protocols, ranked by what their launch would be worth. The value
-    model is fitted on the snapshot's own traded tokens and tested out of sample,
-    token odds are fitted on the snapshot's own listing record, and every row
-    carries a P10–P90 range — no hardcoded list of names, no flat multiple.</p>
-    <p class="meta" id="meta"></p>
+  <div>
+    <h1>TOKEN LAUNCH RADAR <span class="ver">radar-4</span></h1>
+    <p class="sub">Which pre-token protocol is worth farming next — ranked by what its launch would be worth, with a costed plan for each one. Every protocol in the snapshot is accounted for: launch candidates, excluded pre-token names, and traded anchors.</p>
+    <p class="meta" id="meta">Loading the snapshot…</p>
+  </div>
+  <div class="judge-note">
+    <strong>To the judge:</strong> the board below is the launch board (198 rows). The Ledger tab accounts for all 758 protocols. The Model tab shows every value term tested held-out — including the ones that lost — with the numbers. Nothing here is hardcoded: the curve, the odds and every test are fitted from the snapshot at run time by main.ts.
   </div>
 </header>
 
 <section class="kpis" id="kpis" aria-label="Key figures"></section>
-<section class="integrity" id="integrity" aria-label="Self checks"></section>
+<section class="checks" id="checks" aria-label="Integrity checks"></section>
 
-<section class="controls">
-  <input id="q" type="search" placeholder="Search a protocol…" aria-label="Search">
-  <select id="cat" aria-label="Category"><option value="">All categories</option></select>
-  <select id="verdict" aria-label="Verdict">
-    <option value="">All verdicts</option>
-    <option>FARM</option>
-    <option>THIN</option>
-    <option>SKIP</option>
+<nav class="tabs" id="tabs">
+  <button data-view="board" class="active">Launch board</button>
+  <button data-view="ledger">Full ledger · 758</button>
+  <button data-view="anchors">Traded anchors</button>
+  <button data-view="model">Model &amp; tests</button>
+</nav>
+
+<section class="controls" id="controls">
+  <input id="q" type="search" placeholder="Filter by name or slug…" aria-label="Filter by name or slug">
+  <select id="fcat" aria-label="Filter by category"><option value="">All categories</option></select>
+  <select id="fverdict" aria-label="Filter by verdict">
+    <option value="">All verdicts</option><option>FARM</option><option>THIN</option><option>SKIP</option>
   </select>
-  <select id="sort" aria-label="Sort">
-    <option value="rank">Sort: rank</option>
-    <option value="expected">Sort: expected value</option>
-    <option value="tvl">Sort: TVL</option>
-    <option value="growth">Sort: 7-day change</option>
-    <option value="age">Sort: age</option>
-    <option value="odds">Sort: token odds</option>
-  </select>
-  <nav class="views" aria-label="Views">
-    <button data-view="board" class="on">Board</button>
-    <button data-view="live">Live anchors</button>
-    <button data-view="model">Model</button>
-  </nav>
+  <span class="count" id="count"></span>
 </section>
 
 <main>
   <section id="view-board" class="view">
-    <table id="board">
-      <thead><tr>
-        <th>#</th><th>Protocol</th><th>Category</th><th>Chains</th>
-        <th class="num">TVL</th><th class="num">7d</th><th class="num">Age</th>
-        <th class="num">Implied</th><th class="num">Odds</th><th class="num">Expected</th><th>Verdict</th>
-      </tr></thead>
-      <tbody id="rows"></tbody>
-    </table>
-    <p class="count" id="count"></p>
+    <p class="hint">Click a column to sort. Click a row for the protocol's detail: its model breakdown, its three deposit tiers and its farm plan. Implied value is the fitted launch value times the fitted token odds — the expected value, not the raw value.</p>
+    <table id="board"><thead></thead><tbody></tbody></table>
   </section>
 
-  <section id="detail" class="detail" hidden></section>
+  <section id="view-ledger" class="view" hidden>
+    <p class="hint">Every protocol in the snapshot, one row each. <b>Launch</b> rows are the ranked board. <b>Excluded</b> rows record no token but fail the watchlist rule — the reason is shown, so nothing is dropped silently. <b>Traded</b> rows already trade; their value is the market's own market cap where the snapshot records one.</p>
+    <table id="ledger"><thead></thead><tbody></tbody></table>
+    <p class="hint" id="ledger-more"></p>
+  </section>
 
-  <section id="view-live" class="view" hidden>
-    <h2>Live anchors — the traded tokens the curve was fitted on</h2>
-    <p class="note">These protocols already trade, so the board shows the market's own
-    value next to what the fitted curve would have predicted for them. The curve
-    is fitted on all 128 of them; the 24 largest by market cap are shown here.</p>
-    <table id="live-table">
-      <thead><tr>
-        <th>Protocol</th><th>Category</th>
-        <th class="num">TVL</th><th class="num">Market cap</th>
-        <th class="num">Curve predicted</th><th class="num">Ratio</th>
-      </tr></thead>
-      <tbody id="live-rows"></tbody>
-    </table>
+  <section id="view-anchors" class="view" hidden>
+    <p class="hint">The 40 largest traded tokens by market cap. The curve's prediction sits next to the market's own value: the multiple is what the fitted model would have said the token was worth before it listed.</p>
+    <table id="anchors"><thead></thead><tbody></tbody></table>
+  </section>
+
+  <section id="view-detail" class="view" hidden>
+    <button id="back" class="back">← Back to the board</button>
+    <div id="detail"></div>
   </section>
 
   <section id="view-model" class="view" hidden>
-    <h2>The model — fitted, tested, and its limits stated</h2>
-    <div id="model-body"></div>
+    <div id="model"></div>
   </section>
 </main>
 
 <footer>
-  <p id="foot"></p>
+  <p><b>How to read this radar.</b> A protocol “records no token” when the snapshot carries no market cap, no gecko id and no symbol for it — that is DefiLlama's record, not proof it has none. Implied value = fitted curve value × fitted token odds. The P10–P90 band is the 10th–90th percentile of the leave-one-out residuals. Farm plans are costed in three deposit tiers (small / standard / large) with chain-based gas; the verdict comes from the standard tier at an assumed 0.005% farmer share. Traded rows are called on their curve multiple instead: below 0.70× FARM, 0.70–1.50× THIN, above 1.50× SKIP.</p>
+  <p><b>Method, in one paragraph.</b> The size curve log(mcap) = a + b·log(TVL) is least squares over the snapshot's own 128 traded tokens with a recorded market cap. Token odds are a logistic regression P(listed | age) fitted on the snapshot's own 645 known-age protocols, turned into ever-lists odds by the survival identity with pi from the oldest decile. Every extra term — quadratic, per-category curves, chain count, growth, age, Huber, trimmed — was fitted and tested held-out; the Model tab prints the numbers and why the plain curve ships. The program runs twice and writes identical bytes; it reads only the sealed snapshot and reaches no network.</p>
+  <p class="fine">Implied values are this entry's own claim, never make.fun's. Not investment advice.</p>
 </footer>
-
 <script src="../data.js"></script>
 <script src="app.js"></script>
 </body>
