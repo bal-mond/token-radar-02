@@ -51,12 +51,12 @@ mkdirSync(out, { recursive: true });
 writeFileSync(join(out, 'board.json'), `${JSON.stringify({ rows: board })}\n`);
 writeFileSync(join(out, 'data.js'), dataScript(radar));
 
-/** Copy one directory's regular files into `to`, skipping names that start with a dot. */
+/** Copy one directory's regular files into `to`, skipping names that start with a dot. Sorted so the copy order is deterministic. */
 function copyFiles(from: string, to: string): string[] {
   if (!existsSync(from)) return [];
   mkdirSync(to, { recursive: true });
   const copied: string[] = [];
-  for (const name of readdirSync(from)) {
+  for (const name of readdirSync(from).sort()) {
     if (name.startsWith('.')) continue;
     const path = join(from, name);
     if (!statSync(path).isFile()) continue;
@@ -75,6 +75,11 @@ if (shots.length < 3) {
 for (const name of shots) {
   if (!IMAGE_NAME.test(name)) {
     process.stderr.write(`token radar: screenshots/${name}: a name is letters, digits and . _ -, 1 to 128 characters\n`);
+    process.exit(1);
+  }
+  const bytes = statSync(join(out, 'screenshots', name)).size;
+  if (bytes > SCREENSHOT_CAPS.max_bytes) {
+    process.stderr.write(`token radar: screenshots/${name} is ${bytes} bytes, over the ${SCREENSHOT_CAPS.max_bytes} byte cap\n`);
     process.exit(1);
   }
 }
