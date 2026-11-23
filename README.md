@@ -1,4 +1,4 @@
-# Token Launch Radar — radar-2
+# Token Launch Radar — radar-3
 
 [![make.fun](https://make.fun/badge/token-radar-01.svg)](https://make.fun/bounty/token-radar-01)
 [![rank](https://make.fun/badge/token-radar-01/bal-mond/token-radar-02/rank.svg)](https://make.fun/bounty/token-radar-01)
@@ -10,7 +10,7 @@ ones still record no token, and ranks them by what their launch would be worth �
 then hands in a web dashboard with the board, a detail view for each protocol,
 and the steps to farm it.
 
-## The model (radar-2)
+## The model (radar-3)
 
 Every number is derived from the sealed snapshot at run time, never from a
 hand-kept list of names:
@@ -18,25 +18,50 @@ hand-kept list of names:
 - **Size curve, fitted.** `log(market cap) = a + b · log(TVL)`, least squares
   over the snapshot's own traded tokens with a known market cap (128 clean
   comps). The curve is fitted fresh on every run.
-- **Growth, down-weighted.** The 7-day change, clamped to −60%…+120%, at
-  weight 0.25 — small on purpose, because in-sample growth barely predicts a
-  traded token's multiple (r = −0.14).
-- **Maturity.** Longer-running with no token counts for more, up to a cap.
-- **Token odds.** The snapshot's own listing rate (416 of 758 record a token),
-  decayed with no-token age. A protocol that has run years with no token has
-  shown it is less likely ever to list.
+- **Token odds, fitted.** A logistic regression P(listed | protocol age),
+  fitted by IRLS on the snapshot's 645 protocols with a known age, turned
+  into the odds that an unlisted protocol ever lists by
+  odds(a) = (pi − q(a)) / (1 − q(a)), where pi is the listed share among the
+  oldest decile. 5-fold log-loss 0.625 against 0.694 for the flat base rate,
+  AUC 0.704 against 0.500; split-half calibration per age bucket is shown on
+  the model page.
 - **Expected value = implied × odds.** The board ranks by expected value.
+- **P10–P90 range on every row.** The 10th and 90th percentiles of the
+  leave-one-out residuals, x0.05 to x8.82 around the curve's prediction. The
+  band holds 74% / 77% / 79% on unseen tokens (two walk-forward cuts,
+  10-fold).
+
+## What changed from radar-2, and why
+
+- **Growth term dropped.** radar-2 kept the 7-day change at weight 0.25
+  (in-sample r = −0.14). Out of sample it hurts: LOO x3.77 against x3.40
+  bare, 10-fold x3.58 against x3.57, walk-forward x3.14 against x3.08.
+- **Maturity term dropped.** radar-2 multiplied by 0.7–1.0 on protocol age
+  (in-sample r = −0.02 against the curve residual). Out of sample it hurts
+  worse: LOO x3.58, 10-fold x3.63, walk-forward x4.44.
+- **Odds fitted instead of asserted.** radar-2 multiplied the flat listing
+  rate (0.55) by an exp decay with a hand-picked 1095-day timescale. radar-3
+  fits the decay from the listing record itself.
+- **More tests, all shown.** Second walk-forward cut (2024-07-01), 10-fold
+  cross-validation, the term-by-term LOO table (growth, age, quadratic,
+  category intercept, Huber, trimmed), and the odds calibration table.
+- **Integrity strip 6 → 10 checks** on the dashboard cover, each computed
+  from the data it checks.
 
 Terms that did not survive the blind test are dropped and the dashboard says
-so: a per-category median multiple predicts traded market caps worse than the
-curve in leave-one-out, so none is used.
+so, with the numbers: a per-category median multiple predicts traded market
+caps worse than the curve in leave-one-out (x5.5 against x3.4), so none is
+used; a quadratic curve, a shrunk category intercept, a Huber fit and a
+trimmed refit all lose to plain OLS too.
 
 ## The tests (run at build time, shown on the dashboard)
 
-- Leave-one-out over 128 comps: median error ×3.4, 32% of predictions within
-  2x of the real market cap.
+- Leave-one-out over 128 comps: median error ×3.40, 32% of predictions
+  within 2x of the real market cap.
 - Walk-forward (fitted on tokens listed before 2025-01-01, tested on those
-  listed after): median error ×3.1, 26% within 2x.
+  listed after): median error ×3.08, 26% within 2x. Second cut
+  (2024-07-01): ×3.16, 33% within 2x.
+- 10-fold cross-validation: median error ×3.57, 31% within 2x.
 
 The curve is an honest, noisy predictor, and the board says so instead of
 hiding it.

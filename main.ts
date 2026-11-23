@@ -1,14 +1,16 @@
-// Token Launch Radar, radar-2 (Node 22, standard library only).
+// Token Launch Radar, radar-3 (Node 22, standard library only).
 //
 // Reads the sealed snapshot from /input/snapshot.json (or --input <file|dir>),
-// fits the size curve on the snapshot's own traded tokens, ranks every
-// launch candidate by its odds-weighted expected value, and writes the
-// dashboard's data and dossier to /output.
+// fits the size curve on the snapshot's own traded tokens, fits the listing
+// odds on the snapshot's own known-age protocols, ranks every launch
+// candidate by its odds-weighted expected value, and writes the dashboard's
+// data and dossier to /output.
 //
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts --input ../input/snapshot.json
 //
 // The program is deterministic: the same snapshot always writes the same
-// bytes, so the grader's two runs agree.
+// bytes, so the grader's two runs agree. No randomness, no clock, no network:
+// every fit is pure arithmetic over the snapshot, in snapshot order.
 
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -40,7 +42,7 @@ if (!existsSync(inputFile)) {
 const out = arg('output', process.env.MAKEFUN_OUTPUT_DIR ?? '/output');
 
 const snapshot = parseSnapshot(readFileSync(inputFile, 'utf8'));
-const { board, radar, curve, listingRate } = buildRadar(snapshot);
+const { board, radar, curve, listingRate, odds } = buildRadar(snapshot);
 const issue = boardIssue(board, snapshot);
 if (issue !== null) {
   process.stderr.write(`token radar: the model wrote a board the gate refuses: ${issue}\n`);
@@ -89,6 +91,8 @@ writeFileSync(join(out, 'dossier.json'), buildDossier(out, { text_max_bytes: TEX
 
 process.stdout.write(
   `token radar: ${snapshot.protocols.length} protocols, ${snapshot.watchlist.length} on the watchlist, ${board.length} rows ranked (${radar.verdicts.FARM} FARM, ${radar.verdicts.THIN} THIN, ${radar.verdicts.SKIP} SKIP)\n` +
-    `token radar: curve log(mcap) = ${curve.intercept.toFixed(4)} + ${curve.slope.toFixed(4)} * log(TVL) on ${curve.comps} comps; listing rate ${listingRate.toFixed(4)}; LOO x${radar.tests.loo_median_factor} (${(radar.tests.loo_within_2x * 100).toFixed(1)}% within 2x, n=${radar.tests.loo_n}); walk-forward x${radar.tests.walk_median_factor} (${(radar.tests.walk_within_2x * 100).toFixed(1)}% within 2x, ${radar.tests.walk_train_n}+${radar.tests.walk_test_n})\n` +
+    `token radar: curve log(mcap) = ${curve.intercept.toFixed(4)} + ${curve.slope.toFixed(4)} * log(TVL) on ${curve.comps} comps; listing rate ${listingRate.toFixed(4)}; LOO x${radar.tests.loo_median_factor} (${(radar.tests.loo_within_2x * 100).toFixed(1)}% within 2x, n=${radar.tests.loo_n}); walk-forward x${radar.tests.walk_median_factor} (${(radar.tests.walk_within_2x * 100).toFixed(1)}% within 2x, ${radar.tests.walk_train_n}+${radar.tests.walk_test_n}) and x${radar.tests.walk2_median_factor} (second cut, ${radar.tests.walk2_train_n}+${radar.tests.walk2_test_n}); 10-fold x${radar.tests.fold_median_factor}\n` +
+    `token radar: odds logit intercept ${odds.intercept.toFixed(3)} slope ${odds.slope_per_year.toFixed(3)}/yr on ${odds.known_age_n} known-age protocols, pi ${odds.pi}; 5-fold log-loss ${radar.tests.odds_logloss}, AUC ${radar.tests.odds_auc}; calibration max gap ${radar.tests.odds_max_calibration_gap}\n` +
+    `token radar: P10-P90 band x${radar.tests.p10_factor}-x${radar.tests.p90_factor} holds ${(radar.tests.p90_coverage_walk * 100).toFixed(1)}% / ${(radar.tests.p90_coverage_walk2 * 100).toFixed(1)}% / ${(radar.tests.p90_coverage_fold * 100).toFixed(1)}% (walk-forward 2025, walk-forward 2024, 10-fold)\n` +
     `token radar: wrote ${join(out, 'board.json')}, ${join(out, 'data.js')}, ${join(out, 'dashboard')} (${dashFiles.length} files), ${join(out, 'screenshots')} (${shots.length} images) and ${join(out, 'dossier.json')}\n`,
 );
